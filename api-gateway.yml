@@ -1,0 +1,58 @@
+server:
+  port: 9000
+
+spring:
+  cloud:
+    gateway:
+      default-filters:
+        - name: RemoveHopByHopHeadersFilter
+      routes:
+        - id: users-service
+          uri: lb://users-service
+          predicates:
+            - Path=/users/**,/swagger/users/**
+          filters:
+            - name: StripPrefix
+              args:
+                parts: 1
+            - name: RewritePath
+              args:
+                regexp: /swagger/users(?<segment>/?.*)
+                replacement: ${segment}
+        - id: preferences-service
+          uri: lb://preferences-service
+          predicates:
+            - Path=/preferences/**,/swagger/preferences/**
+          filters:
+            - name: StripPrefix
+              args:
+                parts: 1
+            - name: RewritePath
+              args:
+                regexp: /swagger/preferences(?<segment>/?.*)
+                replacement: ${segment}
+        - id: intereses-service
+          uri: lb://intereses-service
+          predicates:
+            - Path=/intereses/**,/swagger/intereses/**
+          filters:
+            - name: StripPrefix
+              args:
+                parts: 1
+            - name: RewritePath
+              args:
+                regexp: /swagger/intereses(?<segment>/?.*)
+                replacement: ${segment}
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_URL:http://keycloak:8080}/realms/${KEYCLOAK_REALM:cattinder}
+          jwk-set-uri: ${KEYCLOAK_URL:http://keycloak:8080}/realms/${KEYCLOAK_REALM:cattinder}/protocol/openid-connect/certs
+
+eureka:
+  instance:
+    hostname: api-gateway
+    non-secure-port: ${server.port}
+    instance-id: ${spring.application.name}:${server.port}
+
